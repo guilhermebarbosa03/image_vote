@@ -86,19 +86,19 @@ class Application():
         self.rename_screen_button.bind("<ButtonPress-1>", self.play_button_press)
         self.rename_screen_button.bind("<ButtonRelease-1>", self.play_button_release)
 
-    # Count variations and check if they are consistent for every level
-    def count_variations(self):
-        variation_dict = {}
+    # Count variants and check if they are consistent for every level
+    def count_variants(self):
+        variants_dict = {}
 
         for filename in os.listdir(self.filepath):
             basename = re.sub(r"\d*\.\w+$",r"",filename)
-            variation_dict[basename] = variation_dict.get(basename,0) + 1
-        variation_values = list(variation_dict.values())
+            variants_dict[basename] = variants_dict.get(basename,0) + 1
+        variant_values = list(variants_dict.values())
 
-        if len(set(variation_values)) != 1:
+        if len(set(variant_values)) != 1:
             return False
         else:
-            return variation_values[0]
+            return variant_values[0]
         
     # Calculate aspect ratio of the images based on the first one, the rest will be stretched to the same aspect ratio if different 
     def calculate_aspect(self):
@@ -122,9 +122,9 @@ class Application():
 
     # The page for renaming the images
     def rename_screen(self):
-        self.variation_entries = []
-        self.variation_labels = []
-        self.variation_count = 1
+        self.variant_entries = []
+        self.variant_labels = []
+        self.variant_count = 1
         self.date_sort=False
         self.reverse_sort=False
 
@@ -136,25 +136,25 @@ class Application():
 
         # Create containers for the widgets
         self.rename_container = tk.Frame(self.root,bg=self.background_color)
-        self.variation_container = tk.Frame(self.rename_container,bg="#74868f")
-        self.variation_labels_container = tk.Frame(self.rename_container,bg=self.background_color)
-        self.modify_variation_container = tk.Frame(self.variation_container,bg="#74868f")
+        self.variant_container = tk.Frame(self.rename_container,bg="#74868f")
+        self.variant_labels_container = tk.Frame(self.rename_container,bg=self.background_color)
+        self.modify_variant_container = tk.Frame(self.variant_container,bg="#74868f")
 
-        # List with text entries for the variation names
-        self.variation_entries.append(tk.Entry(self.variation_container,font=("Helvetica",11),bg=self.button_style["background"],foreground="white",bd=0,insertbackground="white"))
-        self.variation_labels.append(tk.Label(self.variation_labels_container,font=("Helvetica",11),bg=self.background_color,foreground="white",text="Variation 1"))
+        # List with text entries for the variant names
+        self.variant_entries.append(tk.Entry(self.variant_container,font=("Helvetica",11),bg=self.button_style["background"],foreground="white",bd=0,insertbackground="white"))
+        self.variant_labels.append(tk.Label(self.variant_labels_container,font=("Helvetica",11),bg=self.background_color,foreground="white",text="Variant 1"))
 
         # Texts
         self.rename_title = tk.Label(self.root,background=self.background_color,fg="white",font=("Helvetica",48,"bold"),text="Rename Images")
-        self.rename_disclaimer = tk.Label(self.root,background=self.background_color,fg="white",font=("Helvetica",12,"bold"),text="-The images have to be sorted alphabetically or by creation date, and the variations need to be in the same order for every level\n-If sorted by date, the latest images will be the last level by default")
+        self.rename_disclaimer = tk.Label(self.root,background=self.background_color,fg="white",font=("Helvetica",12,"bold"),text="-The images have to be sorted alphabetically or by creation date, and the variants need to be in the same order for every level\n-If sorted by date, the latest images will be the last level by default")
         self.rename_path_label = tk.Label(self.rename_container,bg=self.background_color,fg="white",font=("Helvetica",11))
         self.reverse_label = tk.Label(self.rename_container,text="Reverse sorting",font=("Helvetica",11),fg="white",bg=self.background_color)
         self.date_sort_label = tk.Label(self.rename_container,text="Sorted by date?",font=("Helvetica",11),fg="white",bg=self.background_color)
 
         # Warnings
         self.rename_warning = tk.Label(self.root,text="Invalid Folder.",bg=self.background_color,fg="red",font=("Helvetica",11))
-        self.empty_entry_warning = tk.Label(self.root,text="Can't have empty variation name.",bg=self.background_color,fg="red",font=("Helvetica",11))
-        self.variation_number_incompatible_warning = tk.Label(self.root,text="Number of files needs to be a multiple of the number of variations.",bg=self.background_color,fg="red",font=("Helvetica",11))
+        self.empty_entry_warning = tk.Label(self.root,text="Can't have empty variant name.",bg=self.background_color,fg="red",font=("Helvetica",11))
+        self.variant_number_incompatible_warning = tk.Label(self.root,text="Number of files needs to be a multiple of the number of variants.",bg=self.background_color,fg="red",font=("Helvetica",11))
         self.successful_rename_warning = tk.Label(self.root,text="Files renamed successfully.",bg=self.background_color,fg="white",font=("Helvetica",11))
         self.error_rename_warning = tk.Label(self.root,text="Error renaming files.",bg=self.background_color,fg="red",font=("Helvetica",11))
 
@@ -164,8 +164,8 @@ class Application():
         self.toggle_reverse_button = tk.Button(self.rename_container,**self.button_style,text="Disabled",font=("Helvetica",12),command=self.toggle_reverse)
         self.rename_button = tk.Button(self.rename_container,text="Rename",font=("Helvetica",24),**self.button_style,state=tk.DISABLED,command=self.renaming)
         self.back_button = tk.Button(self.root,**self.button_style,font=("Helvetica",20),text="Back",command=self.go_back_screen)
-        self.variation_add_button = tk.Button(self.modify_variation_container,text="Add",font=("Helvetica",10),**self.button_style,command=self.increase_variation)
-        self.variation_remove_button = tk.Button(self.modify_variation_container,text="Remove",font=("Helvetica",10),**self.button_style,command=self.decrease_variation)
+        self.variant_add_button = tk.Button(self.modify_variant_container,text="Add",font=("Helvetica",10),**self.button_style,command=self.increase_variant)
+        self.variant_remove_button = tk.Button(self.modify_variant_container,text="Remove",font=("Helvetica",10),**self.button_style,command=self.decrease_variant)
 
         # Load the widgets
         self.rename_title.pack(pady=(100,0))
@@ -182,28 +182,28 @@ class Application():
         self.rename_container.grid_columnconfigure(0,weight=1,minsize=437)
         self.rename_container.grid_columnconfigure(1,weight=1,minsize=150)
         self.rename_container.grid_columnconfigure(2,weight=1,minsize=437)
-        self.variation_container.grid(row=5,column=1)
-        self.variation_labels_container.grid(row=5,column=0,sticky="ne")
-        self.variation_entries[0].grid(row=0,column=0,pady=2)
-        self.variation_labels[0].grid(row=0,column=0,sticky="ne")
-        self.modify_variation_container.grid(row=1,column=0)
-        self.variation_add_button.grid(row=0,column=0,pady=2)
+        self.variant_container.grid(row=5,column=1)
+        self.variant_labels_container.grid(row=5,column=0,sticky="ne")
+        self.variant_entries[0].grid(row=0,column=0,pady=2)
+        self.variant_labels[0].grid(row=0,column=0,sticky="ne")
+        self.modify_variant_container.grid(row=1,column=0)
+        self.variant_add_button.grid(row=0,column=0,pady=2)
 
         # Bind the sounds for the buttons
         self.rename_folder_button.bind("<ButtonPress-1>",self.play_button_press)
         self.toggle_date_button.bind("<ButtonPress-1>",self.play_button_press)
         self.toggle_reverse_button.bind("<ButtonPress-1>",self.play_button_press)
         self.rename_button.bind("<ButtonPress-1>",self.play_button_press)
-        self.variation_add_button.bind("<ButtonPress-1>",self.play_button_press)
-        self.variation_remove_button.bind("<ButtonPress-1>",self.play_button_press)
+        self.variant_add_button.bind("<ButtonPress-1>",self.play_button_press)
+        self.variant_remove_button.bind("<ButtonPress-1>",self.play_button_press)
         self.back_button.bind("<ButtonPress-1>",self.play_button_press)
         self.rename_folder_button.bind("<ButtonRelease-1>",self.play_button_release)
         self.toggle_date_button.bind("<ButtonRelease-1>",self.play_button_release)
         self.toggle_reverse_button.bind("<ButtonRelease-1>",self.play_button_release)
         self.rename_button.bind("<ButtonRelease-1>",self.play_button_release)
         self.back_button.bind("<ButtonRelease-1>",self.play_button_release)
-        self.variation_add_button.bind("<ButtonRelease-1>",self.play_button_release)
-        self.variation_remove_button.bind("<ButtonRelease-1>",self.play_button_release)
+        self.variant_add_button.bind("<ButtonRelease-1>",self.play_button_release)
+        self.variant_remove_button.bind("<ButtonRelease-1>",self.play_button_release)
 
     # Get the folder of the files to be renamed
     def open_folder_rename(self):
@@ -212,62 +212,62 @@ class Application():
         self.rename_button.config(state=tk.NORMAL)
         self.successful_rename_warning.pack_forget()
 
-    # Increase the number of variations by 1
-    def increase_variation(self):
-        self.variation_count += 1
+    # Increase the number of variants by 1
+    def increase_variant(self):
+        self.variant_count += 1
 
-        self.variation_entries.append(tk.Entry(self.variation_container,font=("Helvetica",11),bg=self.button_style["background"],foreground="white",bd=0,insertbackground="white"))
-        self.variation_labels.append(tk.Label(self.variation_labels_container,font=("Helvetica",11),bg=self.background_color,foreground="white",text=f"Variation {self.variation_count}"))
+        self.variant_entries.append(tk.Entry(self.variant_container,font=("Helvetica",11),bg=self.button_style["background"],foreground="white",bd=0,insertbackground="white"))
+        self.variant_labels.append(tk.Label(self.variant_labels_container,font=("Helvetica",11),bg=self.background_color,foreground="white",text=f"Variant {self.variant_count}"))
 
-        self.variation_entries[-1].grid(row=self.variation_count-1,column=0,pady=2)
-        self.variation_labels[-1].grid(row=self.variation_count-1,column=0)
+        self.variant_entries[-1].grid(row=self.variant_count-1,column=0,pady=2)
+        self.variant_labels[-1].grid(row=self.variant_count-1,column=0)
 
-        self.modify_variation_container.grid_configure(row=self.variation_count)
+        self.modify_variant_container.grid_configure(row=self.variant_count)
 
-        if self.variation_count == 2:
-            self.variation_remove_button.grid(row=0,column=1,padx=(2,0),pady=2)
+        if self.variant_count == 2:
+            self.variant_remove_button.grid(row=0,column=1,padx=(2,0),pady=2)
 
-    # Decrease the number of variations by 1
-    def decrease_variation(self):
-        self.variation_count -=1
+    # Decrease the number of variants by 1
+    def decrease_variant(self):
+        self.variant_count -=1
 
-        self.variation_entries[-1].grid_forget()
-        del self.variation_entries[-1]
-        self.variation_labels[-1].grid_forget()
-        del self.variation_labels[-1]
+        self.variant_entries[-1].grid_forget()
+        del self.variant_entries[-1]
+        self.variant_labels[-1].grid_forget()
+        del self.variant_labels[-1]
 
-        self.modify_variation_container.grid_configure(row=self.variation_count)
+        self.modify_variant_container.grid_configure(row=self.variant_count)
 
-        if self.variation_count == 1:
-            self.variation_remove_button.grid_forget()
+        if self.variant_count == 1:
+            self.variant_remove_button.grid_forget()
 
-    # Check if folder, variation count and names are OK and run the rename function
+    # Check if folder, variant count and names are OK and run the rename function
     def renaming(self):
         # Clear main screen
         self.error_rename_warning.pack_forget()
         self.successful_rename_warning.pack_forget()
         self.rename_warning.pack_forget()
         self.empty_entry_warning.pack_forget()
-        self.variation_number_incompatible_warning.pack_forget()
+        self.variant_number_incompatible_warning.pack_forget()
 
         # Check if folder is not valid
         if not self.check_path_valid(self.rename_filepath):
             self.rename_warning.pack()
-        # If valid, check if variation names are not empty
+        # If valid, check if variant names are not empty
         else:
-            self.variation_names = [""]*len(self.variation_entries)
-            for i,entry in enumerate(self.variation_entries):
-                self.variation_names[i] = entry.get()
-                if self.variation_names[i] == "":
+            self.variant_names = [""]*len(self.variant_entries)
+            for i,entry in enumerate(self.variant_entries):
+                self.variant_names[i] = entry.get()
+                if self.variant_names[i] == "":
                     self.empty_entry_warning.pack()
                     return
-                # Check if the number of variations is compatible with the number of files
-                elif len(os.listdir(self.rename_filepath))%len(self.variation_names) != 0:
-                    self.variation_number_incompatible_warning.pack()
+                # Check if the number of variants is compatible with the number of files
+                elif len(os.listdir(self.rename_filepath))%len(self.variant_names) != 0:
+                    self.variant_number_incompatible_warning.pack()
                     return
             # Run function to create the renamed files on a new folder
             try:
-                file_renamer.rename(self.rename_filepath,self.variation_names,self.date_sort,self.reverse_sort,os.path.join(os.path.abspath(os.curdir),"renamed_files"))
+                file_renamer.rename(self.rename_filepath,self.variant_names,self.date_sort,self.reverse_sort,os.path.join(os.path.abspath(os.curdir),"renamed_files"))
 
             # Show a warning if there is an error
             except Exception:
@@ -304,7 +304,7 @@ class Application():
         self.rename_warning.pack_forget()
         self.empty_entry_warning.pack_forget()
         self.successful_rename_warning.pack_forget()
-        self.variation_number_incompatible_warning.pack_forget()
+        self.variant_number_incompatible_warning.pack_forget()
 
         # Load starting screen
         self.load_start()
@@ -338,20 +338,20 @@ class Application():
                 
         self.templist = [] # List used to create separated_images list
         self.separated_images = [] # List of lists of images for each page
-        self.titledict = {} # Dictionary with the number identifier of the variation and its name
+        self.titledict = {} # Dictionary with the number identifier of the variant and its name
         self.pages = [] # List with objects for each level's page
-        self.results = [] # List of lists with the resulting order of image variations for each page
+        self.results = [] # List of lists with the resulting order of image variants for each page
 
-        self.variation_index = 0 # Counter for the variation when creating separated_images list
+        self.variant_index = 0 # Counter for the variant when creating separated_images list
         self.level_index = 0 # Counter for the level when creating separated_images list
         
         self.current_page = 0 # Number of the current page
 
         self.calculate_aspect()
-        self.total_variations = self.count_variations()
+        self.total_variants_count = self.count_variants()
 
-        # Show warning if inconsistent number of variations for the pages
-        if not self.total_variations:
+        # Show warning if inconsistent number of variants for the pages
+        if not self.total_variants_count:
             self.image_warning.pack()
             return
 
@@ -364,18 +364,18 @@ class Application():
         
         # Add the images to the separated_list
         for counter in range(len(self.imagelist)):
-            if counter < self.total_variations:
-                self.titledict[self.variation_index] = re.sub(r"\d*\.\w+$",r"",self.imagelist[self.level_index+self.variation_index*self.total_variations])
-            self.templist.append(self.imagelist[self.level_index+self.variation_index*self.total_variations])
-            self.variation_index += 1
-            if self.variation_index%self.total_variations == 0:
+            if counter < self.total_variants_count:
+                self.titledict[self.variant_index] = re.sub(r"\d*\.\w+$",r"",self.imagelist[self.level_index+self.variant_index*self.total_variants_count])
+            self.templist.append(self.imagelist[self.level_index+self.variant_index*self.total_variants_count])
+            self.variant_index += 1
+            if self.variant_index%self.total_variants_count == 0:
                 self.separated_images.append(self.templist)
                 self.templist = []
                 self.level_index += 1
-                self.variation_index = 0
+                self.variant_index = 0
 
-        # Create dictionary with the number id of the variations and their current score    
-        self.pointdict = {i:0 for i in range(self.total_variations)}
+        # Create dictionary with the number id of the variants and their current score    
+        self.pointdict = {i:0 for i in range(self.total_variants_count)}
 
         # Load the page levels
         for count,page in enumerate(self.separated_images):
@@ -427,7 +427,7 @@ class Application():
     # Enable button if all slots are filled
     def button_check(self):
         self.image_order_list = list(dict(sorted(self.pages[self.current_page].image_position_dict.items(),key=lambda x: x[0])).values()) # Create list of the images sorted by their position
-        if len(self.image_order_list) == self.total_variations:
+        if len(self.image_order_list) == self.total_variants_count:
             self.next_button.config(state=tk.NORMAL)
         else:
             self.next_button.config(state=tk.DISABLED)
@@ -448,11 +448,11 @@ class Application():
         self.calculate_score()
         self.ranking_screen()
 
-    # Calculate the score of each variation
+    # Calculate the score of each variant
     def calculate_score(self):
         for pageresult in self.results:
             for subtractor,identifier in enumerate(pageresult):
-                self.pointdict[identifier-2-math.ceil(self.total_variations/2)] += 4-subtractor
+                self.pointdict[identifier-2-math.ceil(self.total_variants_count/2)] += 4-subtractor
         self.finaldict = {self.titledict[key[0]]:self.pointdict[key[0]] for key in sorted(self.pointdict.items(),key=lambda item: -item[1])}
 
     # Adjust size of the scroll region of the ranking list when resizing window
@@ -487,7 +487,7 @@ class Application():
         self.rankingcanvas.config(yscrollcommand=self.scrollbar.set)
         self.rankingcanvas.update()
         self.rankingcanvas.create_window(4,4,window=self.canvasgrid,anchor="nw",width=self.rankingcanvas.winfo_width()-8)
-        # Load variation names and scores
+        # Load variant names and scores
         contestant_index = 0
         for contestant,point in self.finaldict.items():
             self.canvasgrid.columnconfigure(0,weight=1)
@@ -541,7 +541,7 @@ class Level():
         self.app_object.start_container.lift()
         self.canvas.update()
         self.slot_background = self.canvas.create_rectangle(0,0,1,1)
-        self.slot_border = [self.canvas.create_rectangle(0,0,1,1) for _ in range(math.ceil(self.app_object.total_variations/2))]
+        self.slot_border = [self.canvas.create_rectangle(0,0,1,1) for _ in range(math.ceil(self.app_object.total_variants_count/2))]
 
         self.calculate_size()
         self.spawn_images()
@@ -571,7 +571,7 @@ class Level():
 
     # Calculate the maximum size available for the images at the current window size
     def calculate_size(self,event=None,re_size=False):
-        resvertical = min(self.canvas.winfo_height()/self.app_object.total_variations,self.app_object.base_resolution[1])
+        resvertical = min(self.canvas.winfo_height()/self.app_object.total_variants_count,self.app_object.base_resolution[1])
         reshorizontal = min(self.canvas.winfo_width(),self.app_object.base_resolution[0])
         bottleneck = min(resvertical*self.app_object.aspectratio[0],reshorizontal*self.app_object.aspectratio[1])
         self.image_resolution = (math.floor((bottleneck/self.app_object.aspectratio[1])),math.floor(bottleneck/self.app_object.aspectratio[0]))
@@ -581,12 +581,12 @@ class Level():
 
     # Change info about the coordinates of the slots and resolutions
     def adjust_sizes(self):
-        self.slot_centers_list = [(float((self.canvas.winfo_width())/2),self.image_resolution[1]*x + self.image_resolution[1]/2) for x in range(self.app_object.total_variations)]
+        self.slot_centers_list = [(float((self.canvas.winfo_width())/2),self.image_resolution[1]*x + self.image_resolution[1]/2) for x in range(self.app_object.total_variants_count)]
 
         for i,slot in enumerate(self.slot_border):
             self.canvas.coords(slot,(self.canvas.winfo_width()-self.image_resolution[0])/2,0+i*2*self.image_resolution[1],(self.canvas.winfo_width()+self.image_resolution[0])/2,self.image_resolution[1]+i*2*self.image_resolution[1])
         self.canvas.coords(self.slot_background,(self.canvas.winfo_width()-self.image_resolution[0])/2,0,(self.canvas.winfo_width()+self.image_resolution[0])/2,self.app_object.root.winfo_height())
-        self.empty_slots_coords = [self.slot_centers_list[i] for i in range(self.app_object.total_variations) if i not in self.image_slot_dict.values()]
+        self.empty_slots_coords = [self.slot_centers_list[i] for i in range(self.app_object.total_variants_count) if i not in self.image_slot_dict.values()]
 
         for i,img in enumerate(self.image_object):
             img.update_arguments(self.empty_slots_coords,self.slot_centers_list,self.image_resolution)
@@ -623,7 +623,7 @@ class Level():
             else:
                 self.spawn_point_x = random.randint(int(self.image_resolution[0]/2),int(self.image_resolution[0]*2-self.image_resolution[0]))
 
-            self.spawn_point_y = random.randint(int(self.image_resolution[1]/2),int(self.image_resolution[1]*self.app_object.total_variations-self.image_resolution[1]/2))
+            self.spawn_point_y = random.randint(int(self.image_resolution[1]/2),int(self.image_resolution[1]*self.app_object.total_variants_count-self.image_resolution[1]/2))
 
             # Check if images are far enough apart for each other
             self.distances = [math.dist((self.spawn_point_x,self.spawn_point_y),p) for p in self.spawnpoint_list]
