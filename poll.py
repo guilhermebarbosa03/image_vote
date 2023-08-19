@@ -4,7 +4,6 @@ from tkinter import ttk,filedialog
 import pygame
 import os
 import math
-import bisect
 import random
 import re
 import file_renamer
@@ -581,7 +580,6 @@ class Level():
     # Change info about the coordinates of the slots and resolutions
     def adjust_sizes(self):
         self.slot_centers_list = [(float((self.canvas.winfo_width())/2),self.image_resolution[1]*x + self.image_resolution[1]/2) for x in range(self.app_object.total_variants_count)]
-
         for i,slot in enumerate(self.slot_border):
             self.canvas.coords(slot,(self.canvas.winfo_width()-self.image_resolution[0])/2,0+i*2*self.image_resolution[1],(self.canvas.winfo_width()+self.image_resolution[0])/2,self.image_resolution[1]+i*2*self.image_resolution[1])
         self.canvas.coords(self.slot_background,(self.canvas.winfo_width()-self.image_resolution[0])/2,0,(self.canvas.winfo_width()+self.image_resolution[0])/2,self.app_object.root.winfo_height())
@@ -597,11 +595,9 @@ class Level():
                 self.canvas.coords(image.image_id,self.slot_centers_list[self.slotted_image_list.index(image.image_id)][0],self.slot_centers_list[self.slotted_image_list.index(image.image_id)][1])
             image.outofbounds()
 
-
     # Change size of the images
     def re_size(self):
         self.photos_list_resized.clear()
-        
         # If the new image size hasn't been loaded yet, it will use the original size as the base to not lose sharpness, but this is laggier
         if self.image_resolution[0] > self.images_list_resized[0].size[0]:
             for i,img in enumerate(self.images_list_resized):
@@ -656,15 +652,15 @@ class ImageClass():
     # Will teleport the image to the closest point inside the canvas if it is outside
     def outofbounds(self):
 
-        self.repositioned_x,self.repositioned_y = self.canvas.coords(self.image_id)
+        self.x_coordinate,self.y_coordinate = self.canvas.coords(self.image_id)
 
         # Check if the image is not completely inside the canvas for every side
-        self.repositioned_x = max(self.repositioned_x, self.page_class.image_resolution[0]/2)
-        self.repositioned_y = max(self.repositioned_y, self.page_class.image_resolution[1]/2)
-        self.repositioned_x = min(self.repositioned_x, self.canvas.winfo_width()-self.page_class.image_resolution[0]/2)
-        self.repositioned_y = min(self.repositioned_y, self.canvas.winfo_height()-self.page_class.image_resolution[1]/2)
+        self.x_coordinate = max(self.x_coordinate, self.page_class.image_resolution[0]/2)
+        self.y_coordinate = max(self.y_coordinate, self.page_class.image_resolution[1]/2)
+        self.x_coordinate = min(self.x_coordinate, self.canvas.winfo_width()-self.page_class.image_resolution[0]/2)
+        self.y_coordinate = min(self.y_coordinate, self.canvas.winfo_height()-self.page_class.image_resolution[1]/2)
 
-        self.canvas.coords(self.image_id,self.repositioned_x,self.repositioned_y)
+        self.canvas.coords(self.image_id,self.x_coordinate,self.y_coordinate)
 
     # Zoom in right-clicked image to fit the entire screen
     def full_image(self,event):
@@ -699,11 +695,10 @@ class ImageClass():
         self.outofbounds() # Check if image is outside of canvas
 
         # Calculate distance of the image to the closest slot
-        self.distances = [math.dist(p,self.canvas.coords(self.image_id)) for p in self.page_class.slot_centers_list]
-        self.closest_center = self.page_class.slot_centers_list[self.distances.index(min(self.distances))]
+        self.closest_center = min(self.page_class.slot_centers_list,key=lambda center: math.dist(center,self.canvas.coords(self.image_id)))
 
         # Teleport image into slot if close enough
-        if min(self.distances) < self.page_class.image_resolution[1]:
+        if math.dist(self.closest_center,self.canvas.coords(self.image_id)) < self.page_class.image_resolution[1]:
             self.app_object.audio_image_release.play()
             put_in = self.page_class.slot_centers_list.index((self.closest_center[0],self.closest_center[1]))
 
