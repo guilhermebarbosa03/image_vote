@@ -10,7 +10,7 @@ Image Vote is an interactive program that allows users to blind pick between dif
 
 **Choose between variants:** All levels will have the same variants, but in different scenarios. For example: in the first level, you can compare how cameras **A**, **B** and **C** perform in situation **X**. In the second level, you compare those same cameras in situation **Y**.
 
-**Ranking:** After completing all levels, you can see the final score of each variant.
+**Ranking:** After completing all levels, you can view the final score of each variant and see how they performed.
 
 ## Usage Guide
 

@@ -387,6 +387,7 @@ class Application():
         self.next_button = tk.Button(self.root, text="Next",font=("Helvetica",24),borderwidth=0,fg="#FFFFFF",disabledforeground="#888888", command=self.show_next_page,activebackground="#D0D0D0")
         self.next_button.pack(side="right",fill="y")
         self.update_button()
+        self.loading_label.place_forget()
         self.show_page(0) # Show the first level
 
         self.next_button.bind("<ButtonPress-1>", self.play_button_press) # Bind sound to the "Next" button
@@ -420,14 +421,13 @@ class Application():
     # Save current page results and run show_page
     def show_next_page(self):
         self.play_button_release()
-        self.results.append(self.image_order_list) # Save current page results
+        self.results.append(self.pages[self.current_page].slotted_image_list) # Save current page results
         if self.current_page < self.last_page_index:
             self.show_page(self.current_page + 1)
 
     # Enable button if all slots are filled
     def button_check(self):
-        self.image_order_list = list(dict(sorted(self.pages[self.current_page].image_position_dict.items(),key=lambda x: x[0])).values()) # Create list of the images sorted by their position
-        if len(self.image_order_list) == self.total_variants_count:
+        if not 0 in self.pages[self.current_page].slotted_image_list:
             self.next_button.config(state=tk.NORMAL)
         else:
             self.next_button.config(state=tk.DISABLED)
@@ -435,7 +435,7 @@ class Application():
     # Calculate ranking results and show final screen
     def finish_game(self):
         self.play_button_release()
-        self.results.append(self.image_order_list) # Save last page results
+        self.results.append(self.pages[self.current_page].slotted_image_list) # Save last page results
         # Switch next button for a finish button
         self.next_button.pack_forget()
         self.end_button = tk.Button(self.root, text="Finish",font=("Helvetica",24),borderwidth=0,width=6,bg="#515A60",fg="#FFFFFF",command=lambda:self.root.destroy(),activebackground="#D0D0D0")
@@ -524,13 +524,12 @@ class Level():
 
     def __init__(self,app_object,page_images):
         
-        self.image_position_dict = {} # Dictionary with slot coordinate and the id of the image they contain
-        self.image_slot_dict = {} # Dictionary with all images and the number of the slot they are in
+        self.slotted_image_list = [0]*app_object.total_variants_count # List with all slots and the image they contain
         self.photos_list = [] # List of ImageTk.PhotoImage objects of the resized images
         self.photos_list_resized = [] # List of ImageTk.PhotoImage objects
         self.images_list_original = [] # List of the images with their original size
         self.images_list_resized = [] # List of the images after resizing to fit in the slots
-        self.image_object = [] # List with all objects of each image of the page
+        self.image_objects_list = [] # List with all objects of each image of the page
         self.spawnpoint_list = [(0,0)] # List of generated spawn coordinates for each image of the page
         self.app_object = app_object # Application class object
         self.page_images = page_images # List with the images of the current page
@@ -556,11 +555,11 @@ class Level():
     # Load the image files into image objects and get color for the background
     def spawn_images(self):
         for x,imagefile in enumerate(self.page_images):
-            self.spawn_random()
+            self.random_spawn_points()
             self.images_list_original.append(Image.open(os.path.join(self.app_object.filepath,imagefile)))
             self.images_list_resized.append(self.images_list_original[x].resize((self.image_resolution[0],self.image_resolution[1])))
             self.photos_list.append(ImageTk.PhotoImage(self.images_list_resized[x]))
-            self.image_object.append(ImageClass(self.canvas,self.photos_list,x,self.spawnpoint_list[x+1],self.empty_slots_coords,self,self.app_object,self.slot_centers_list))
+            self.image_objects_list.append(ImageClass(self.canvas,self.photos_list,x,self.spawnpoint_list[x+1],self,self.app_object))
 
         # Get the average color of one of the page's images to set as background
         self.colorgetter = self.images_list_resized[0].resize((1,1))
@@ -586,14 +585,18 @@ class Level():
         for i,slot in enumerate(self.slot_border):
             self.canvas.coords(slot,(self.canvas.winfo_width()-self.image_resolution[0])/2,0+i*2*self.image_resolution[1],(self.canvas.winfo_width()+self.image_resolution[0])/2,self.image_resolution[1]+i*2*self.image_resolution[1])
         self.canvas.coords(self.slot_background,(self.canvas.winfo_width()-self.image_resolution[0])/2,0,(self.canvas.winfo_width()+self.image_resolution[0])/2,self.app_object.root.winfo_height())
-        self.empty_slots_coords = [self.slot_centers_list[i] for i in range(self.app_object.total_variants_count) if i not in self.image_slot_dict.values()]
 
-        for i,img in enumerate(self.image_object):
-            img.update_arguments(self.empty_slots_coords,self.slot_centers_list,self.image_resolution)
-            if i+2+len(self.slot_border) in self.image_position_dict.values():
-                self.canvas.coords(i+2+len(self.slot_border),self.slot_centers_list[self.image_slot_dict[i+2+len(self.slot_border)]][0],self.slot_centers_list[self.image_slot_dict[i+2+len(self.slot_border)]][1])
+        # Update info about the resolutions, sizes, slots coordinates after resizing
+        fullvertical = self.canvas.winfo_height()
+        fullhorizontal = self.canvas.winfo_width()
+        bottleneck = min(fullvertical*self.app_object.aspectratio[0],fullhorizontal*self.app_object.aspectratio[1])
+        self.full_image_resolution = (math.floor((bottleneck/self.app_object.aspectratio[1])),math.floor(bottleneck/self.app_object.aspectratio[0]))
 
-            img.outofbounds()
+        for i,image in enumerate(self.image_objects_list):
+            if image.image_id in self.slotted_image_list:
+                self.canvas.coords(image.image_id,self.slot_centers_list[self.slotted_image_list.index(image.image_id)][0],self.slot_centers_list[self.slotted_image_list.index(image.image_id)][1])
+            image.outofbounds()
+
 
     # Change size of the images
     def re_size(self):
@@ -604,18 +607,18 @@ class Level():
             for i,img in enumerate(self.images_list_resized):
                 self.images_list_resized[i] = self.images_list_original[i].resize((self.image_resolution[0],self.image_resolution[1]))
                 self.photos_list_resized.append(ImageTk.PhotoImage(self.images_list_resized[i]))
-                self.image_object[i].photo = self.photos_list_resized[i] 
-                self.canvas.itemconfig(self.image_object[i].image_id,image=self.photos_list_resized[i])
+                self.image_objects_list[i].photo = self.photos_list_resized[i] 
+                self.canvas.itemconfig(self.image_objects_list[i].image_id,image=self.photos_list_resized[i])
         # Uses resized images as the base for the resizing (less lag)
         else:
             for i,img in enumerate(self.images_list_resized):
                 img = img.resize((self.image_resolution[0],self.image_resolution[1]))
                 self.photos_list_resized.append(ImageTk.PhotoImage(img))
-                self.image_object[i].photo = self.photos_list_resized[i]
-                self.canvas.itemconfig(self.image_object[i].image_id,image=self.photos_list_resized[i])
+                self.image_objects_list[i].photo = self.photos_list_resized[i]
+                self.canvas.itemconfig(self.image_objects_list[i].image_id,image=self.photos_list_resized[i])
 
     # Calculate the spawn coordinates randomly for one image
-    def spawn_random(self):
+    def random_spawn_points(self):
         # Define if image will be on left or right side
         while True:
             if random.randint(0,1)%2 == 0:
@@ -631,24 +634,16 @@ class Level():
                 self.spawnpoint_list.append((self.spawn_point_x,self.spawn_point_y))
                 break
 
-    # Update dictionary with the image slots
-    def update_results(self):
-        self.image_position_dict = {self.canvas.coords(widget_id)[1]:widget_id for widget_id in self.canvas.find_all() if tuple(self.canvas.coords(widget_id)) in self.slot_centers_list}
-        self.image_slot_dict = {dictiteration[1]:self.slot_centers_list.index((self.slot_centers_list[0][0],dictiteration[0])) for dictiteration in self.image_position_dict.items()}
-            
 
 class ImageClass():
-    def __init__(self,canvas,photos_list,object_index,spawn_point,empty_slots_coords,page_class,app_object,slot_centers_list):
+    def __init__(self,canvas,photos_list,object_index,spawn_point,page_class,app_object):
 
-        self.slot_centers_list = slot_centers_list # List with the coordinates of the center of all slots
         self.photo = photos_list[object_index] # PhotoImage object of current image
         self.image = page_class.images_list_original[object_index] # Current image file
         self.canvas = canvas
         self.page_class = page_class
-        self.empty_slots_coords = empty_slots_coords
         self.app_object = app_object
         self.image_id = self.canvas.create_image(spawn_point[0],spawn_point[1],image=self.photo)
-        self.image_resolution = self.page_class.image_resolution
 
         # Bind the methods for grabbing images and zooming in
         self.canvas.tag_bind(self.image_id, '<Button1-Motion>', lambda e: self.move_image(e))
@@ -658,27 +653,16 @@ class ImageClass():
         self.canvas.tag_bind(self.image_id, '<ButtonRelease-3>', self.full_image_close)
 
 
-    # Update info about the resolutions, sizes, slots coordinates after resizing
-    def update_arguments(self,empty_slots_coords,slot_centers_list,image_resolution):
-        self.empty_slots_coords = empty_slots_coords
-        self.slot_centers_list = slot_centers_list
-        self.image_resolution = image_resolution
-
-        fullvertical = self.canvas.winfo_height()
-        fullhorizontal = self.canvas.winfo_width()
-        bottleneck = min(fullvertical*self.app_object.aspectratio[0],fullhorizontal*self.app_object.aspectratio[1])
-        self.full_image_resolution = (math.floor((bottleneck/self.app_object.aspectratio[1])),math.floor(bottleneck/self.app_object.aspectratio[0]))
-
     # Will teleport the image to the closest point inside the canvas if it is outside
     def outofbounds(self):
 
         self.repositioned_x,self.repositioned_y = self.canvas.coords(self.image_id)
 
         # Check if the image is not completely inside the canvas for every side
-        self.repositioned_x = max(self.repositioned_x, self.image_resolution[0]/2)
-        self.repositioned_y = max(self.repositioned_y, self.image_resolution[1]/2)
-        self.repositioned_x = min(self.repositioned_x, self.canvas.winfo_width()-self.image_resolution[0]/2)
-        self.repositioned_y = min(self.repositioned_y, self.canvas.winfo_height()-self.image_resolution[1]/2)
+        self.repositioned_x = max(self.repositioned_x, self.page_class.image_resolution[0]/2)
+        self.repositioned_y = max(self.repositioned_y, self.page_class.image_resolution[1]/2)
+        self.repositioned_x = min(self.repositioned_x, self.canvas.winfo_width()-self.page_class.image_resolution[0]/2)
+        self.repositioned_y = min(self.repositioned_y, self.canvas.winfo_height()-self.page_class.image_resolution[1]/2)
 
         self.canvas.coords(self.image_id,self.repositioned_x,self.repositioned_y)
 
@@ -694,7 +678,7 @@ class ImageClass():
         self.canvas.coords(self.image_id,self.canvas.winfo_width()/2,self.canvas.winfo_height()/2) # Center image before zooming
 
         # Zoom image to the max possible size
-        self.fulledimage = self.image.resize(self.full_image_resolution)
+        self.fulledimage = self.image.resize(self.page_class.full_image_resolution)
         self.fulledimage_photo = ImageTk.PhotoImage(self.fulledimage)
         self.canvas.itemconfig(self.image_id,image=self.fulledimage_photo)
 
@@ -715,90 +699,53 @@ class ImageClass():
         self.outofbounds() # Check if image is outside of canvas
 
         # Calculate distance of the image to the closest slot
-        self.distances = [math.dist(p,self.canvas.coords(self.image_id)) for p in self.slot_centers_list]
-        self.closest_center = self.slot_centers_list[self.distances.index(min(self.distances))]
-        self.page_class.update_results()
+        self.distances = [math.dist(p,self.canvas.coords(self.image_id)) for p in self.page_class.slot_centers_list]
+        self.closest_center = self.page_class.slot_centers_list[self.distances.index(min(self.distances))]
 
         # Teleport image into slot if close enough
-        if min(self.distances) < self.image_resolution[1]:
+        if min(self.distances) < self.page_class.image_resolution[1]:
             self.app_object.audio_image_release.play()
-            self.canvas.coords(self.image_id,self.closest_center[0],self.closest_center[1])
+            put_in = self.page_class.slot_centers_list.index((self.closest_center[0],self.closest_center[1]))
 
-            # If there already was an image in the slot 
-            if self.canvas.coords(self.image_id)[1] in self.page_class.image_position_dict.keys() and self.image_id != self.page_class.image_position_dict[self.canvas.coords(self.image_id)[1]]:
+            # If there was no image in the slot previously
+            if self.page_class.slotted_image_list[put_in] == 0:
+                self.page_class.slotted_image_list[put_in] = self.image_id
+                self.canvas.coords(self.image_id,self.closest_center[0],self.closest_center[1])
 
-                # If the there are no empty slots below, move previous image up
-                if self.canvas.coords(self.page_class.image_position_dict[self.canvas.coords(self.image_id)[1]])[1] > self.empty_slots_coords[-1][1]:
-                    self.imagesbelow = [x for x in sorted(self.page_class.image_position_dict.keys(),reverse=True) if x < self.canvas.coords(self.image_id)[1] and (self.canvas.coords(self.image_id)[0],x) in self.slot_centers_list]
-                    self.previous = self.canvas.coords(self.image_id)[1]
-                    self.group = []
-
-                    # Find all images below (that are not separated by an empty slot) to move down
-                    for counter,imagebelow in enumerate(self.imagesbelow):
-                        if (self.canvas.coords(self.image_id)[1] - imagebelow) == self.image_resolution[1]*(counter+1):
-                            self.group.append(imagebelow)
-                        else:
-                            break
-
-
-                    self.emptybelow = [x for x in reversed(self.empty_slots_coords) if x[1] < self.canvas.coords(self.image_id)[1]] # Find all empty slots below 
-
-                    # Iterate through each image to move down
-                    while len(self.group) > 0:
-                        self.beforemoved = self.canvas.coords(self.page_class.image_position_dict[self.group[-1]])
-                        self.canvas.coords(self.page_class.image_position_dict[self.group[-1]],self.emptybelow[0][0],self.emptybelow[0][1])
-                        bisect.insort(self.empty_slots_coords, tuple(self.beforemoved),key=lambda z:z[1])
-
-                        self.empty_slots_coords.remove(tuple(self.canvas.coords(self.page_class.image_position_dict[self.group[-1]])))
-                        self.emptybelow = [z for z in reversed(self.empty_slots_coords) if z[1] < self.canvas.coords(self.image_id)[1]]
-                        self.group.pop()
-
-                    # Move the last image (was previously in the slot the new image took)
-                    self.empty_slots_coords.remove(self.emptybelow[0])
-                    self.canvas.coords(self.page_class.image_position_dict[self.canvas.coords(self.image_id)[1]],self.emptybelow[0][0],self.emptybelow[0][1])
-                    self.emptybelow.clear()
-
-
-                # If there are any empty slots below, move the previous image down. If there is an image where the previous one moved to, it will also be moved down
-                else:
-                    self.imagesbelow = [x for x in sorted(self.page_class.image_position_dict.keys()) if x > self.canvas.coords(self.image_id)[1] and (self.canvas.coords(self.image_id)[0],x) in self.slot_centers_list]
-                    self.previous = self.canvas.coords(self.image_id)[1]
-                    self.group = []
-
-                    # Find all images below (that are not separated by an empty slot) to move down
-                    for counter,imagebelow in enumerate(self.imagesbelow):
-                        if (imagebelow - self.canvas.coords(self.image_id)[1]) == self.image_resolution[1]*(counter+1):
-                            self.group.append(imagebelow)
-                        else:
-                            break
-
-
-                    self.emptybelow = [x for x in self.empty_slots_coords if x[1] > self.canvas.coords(self.image_id)[1]] # Find all empty slots below 
-
-                    # Iterate through each image to move down
-                    while len(self.group) > 0:
-                        self.beforemoved = self.canvas.coords(self.page_class.image_position_dict[self.group[-1]])
-                        self.canvas.coords(self.page_class.image_position_dict[self.group[-1]],self.emptybelow[0][0],self.emptybelow[0][1])
-                        bisect.insort(self.empty_slots_coords, tuple(self.beforemoved),key=lambda z:z[1])
-
-                        self.empty_slots_coords.remove(tuple(self.canvas.coords(self.page_class.image_position_dict[self.group[-1]])))
-                        self.emptybelow = [z for z in self.empty_slots_coords if z[1] > self.canvas.coords(self.image_id)[1]]
-                        self.group.pop()
-
-                    # Move the last image (was previously in the slot the new image took)
-                    self.empty_slots_coords.remove(self.emptybelow[0])
-                    self.canvas.coords(self.page_class.image_position_dict[self.canvas.coords(self.image_id)[1]],self.emptybelow[0][0],self.emptybelow[0][1])
-                    self.emptybelow.clear()
-
-            # Remove slot the image was put in from list of empty slots
+            # If there already was an image in the slot
             else:
-                self.empty_slots_coords.remove(tuple(self.canvas.coords(self.image_id)))
+                to_delete = []
+                # Find the empty slots from bottom to top. The slots under the image have priority when filling compared to the slots above. If on the same side, the slot closest to the moved image has priority.
+                for slot_index,slot_image in reversed(list(enumerate(self.page_class.slotted_image_list))):
+                    # Check if is an empty slot
+                    if slot_image == 0:
+                        # If below, save the slot until a closer one is found
+                        if slot_index > put_in:
+                            to_delete = [slot_index]
+                        # If looking at slots above and an empty slot below has already been found, stop the loop
+                        elif len(to_delete) != 0:
+                            break
+                        # If no empty slots below, stop the loop on the first slot above
+                        else:
+                            to_delete = [slot_index]
+                            break
+
+                # Remove chosen empty slot value and insert the released image
+                del self.page_class.slotted_image_list[to_delete[0]],to_delete
+                self.page_class.slotted_image_list.insert(put_in,self.image_id)
+
+                # Re-position the images to their new slots
+                for image_object in self.page_class.image_objects_list:
+                    try:
+                        image_slot = self.page_class.slotted_image_list.index(image_object.image_id)
+                        self.canvas.coords(image_object.image_id,self.page_class.slot_centers_list[image_slot][0],self.page_class.slot_centers_list[image_slot][1])
+                    except ValueError:
+                        continue
         
         # Play the image_grab audio if image wasn't locked into a slot
         else:
             self.app_object.audio_image_grab.play()
             
-        self.page_class.update_results()
         self.app_object.button_check()
 
         # Make it possible to zoom in image again
@@ -807,16 +754,21 @@ class ImageClass():
 
     # Runs when the user left-clicks on an image
     def mouse_click(self,event):
+
         # Disable zooming in when image is grabbed
         self.canvas.tag_unbind(self.image_id, '<Button-3>')
         self.canvas.tag_unbind(self.image_id, '<ButtonRelease-3>')
         self.app_object.audio_image_grab.play()
-        # Add slot it was in to the list of empty slots
-        if tuple(self.canvas.coords(self.image_id)) in self.slot_centers_list:
-            bisect.insort(self.empty_slots_coords, tuple(self.canvas.coords(self.image_id)),key= lambda z:z[1])
+
+        # If the image were in a slot, make it empty 
+        try:
+            to_empty = self.page_class.slotted_image_list.index(self.image_id)
+            self.page_class.slotted_image_list[to_empty] = 0
+        except ValueError:
+            pass
 
         # Increase the size of the clicked image 
-        self.selectedimage = self.image.resize((int(self.image_resolution[0]*1.1),int(self.image_resolution[1]*1.1)))
+        self.selectedimage = self.image.resize((int(self.page_class.image_resolution[0]*1.1),int(self.page_class.image_resolution[1]*1.1)))
         self.selectedimage_photo = ImageTk.PhotoImage(self.selectedimage)
         self.canvas.itemconfig(self.image_id,image=self.selectedimage_photo) 
 
