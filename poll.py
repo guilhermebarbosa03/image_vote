@@ -10,6 +10,8 @@ import file_renamer
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
+
+
 # Base program interface and functionalities
 class Application():
     
@@ -110,19 +112,22 @@ class Application():
     def open_folder(self):
         self.filepath = filedialog.askdirectory()
         self.path_label.config(text=f"Folder: {self.filepath}")
+        if self.filepath:
+            # Remove warnings
+            self.folder_warning.pack_forget()
+            self.image_warning.pack_forget()
+            self.file_warning.pack_forget()
 
-        # Remove warnings
-        self.folder_warning.pack_forget()
-        self.image_warning.pack_forget()
-        self.file_warning.pack_forget()
-
-        # Enable Start Button
-        self.start_button.config(state=tk.NORMAL)
+            # Enable Start Button
+            self.start_button.config(state=tk.NORMAL)
 
     # The page for renaming the images
     def rename_screen(self):
         self.variant_entries = []
         self.variant_labels = []
+        self.variant_files_button = []
+        self.variant_path_labels = []
+        self.rename_filepath = [False]
         self.variant_count = 1
         self.date_sort=False
         self.reverse_sort=False
@@ -138,6 +143,7 @@ class Application():
         self.variant_container = tk.Frame(self.rename_container,bg="#74868f")
         self.variant_labels_container = tk.Frame(self.rename_container,bg=self.background_color)
         self.modify_variant_container = tk.Frame(self.variant_container,bg="#74868f")
+        self.variant_paths_container = tk.Frame(self.rename_container,bg=self.background_color)
 
         # List with text entries for the variant names
         self.variant_entries.append(tk.Entry(self.variant_container,font=("Helvetica",11),bg=self.button_style["background"],foreground="white",bd=0,insertbackground="white"))
@@ -145,8 +151,8 @@ class Application():
 
         # Texts
         self.rename_title = tk.Label(self.root,background=self.background_color,fg="white",font=("Helvetica",48,"bold"),text="Rename Images")
-        self.rename_disclaimer = tk.Label(self.root,background=self.background_color,fg="white",font=("Helvetica",12,"bold"),text="-The images have to be sorted alphabetically or by creation date, and the variants need to be in the same order for every level\n-If sorted by date, the latest images will be the last level by default")
-        self.rename_path_label = tk.Label(self.rename_container,bg=self.background_color,fg="white",font=("Helvetica",11))
+        #self.rename_disclaimer = tk.Label(self.root,background=self.background_color,fg="white",font=("Helvetica",12,"bold"),text="-The images have to be sorted alphabetically or by creation date, and the variants need to be in the same order for every level\n-If sorted by date, the latest images will be the last level by default")
+        self.variant_path_labels.append(tk.Label(self.variant_paths_container,bg=self.background_color,fg="white",font=("Helvetica",10)))
         self.reverse_label = tk.Label(self.rename_container,text="Reverse sorting",font=("Helvetica",11),fg="white",bg=self.background_color)
         self.date_sort_label = tk.Label(self.rename_container,text="Sorted by date?",font=("Helvetica",11),fg="white",bg=self.background_color)
 
@@ -158,68 +164,83 @@ class Application():
         self.error_rename_warning = tk.Label(self.root,text="Error renaming files.",bg=self.background_color,fg="red",font=("Helvetica",11))
 
         # Buttons
-        self.rename_folder_button = tk.Button(self.rename_container,text="Select Folder",**self.button_style,font=("Helvetica",14),command=self.open_folder_rename)
+        #self.rename_folder_button = tk.Button(self.rename_container,text="Select Folder",**self.button_style,font=("Helvetica",14),command=self.open_folder_rename)
         self.toggle_date_button = tk.Button(self.rename_container,**self.button_style,text="Disabled",font=("Helvetica",12),command=self.toggle_date)
         self.toggle_reverse_button = tk.Button(self.rename_container,**self.button_style,text="Disabled",font=("Helvetica",12),command=self.toggle_reverse)
         self.rename_button = tk.Button(self.rename_container,text="Rename",font=("Helvetica",24),**self.button_style,state=tk.DISABLED,command=self.renaming)
         self.back_button = tk.Button(self.root,**self.button_style,font=("Helvetica",20),text="Back",command=self.go_back_screen)
         self.variant_add_button = tk.Button(self.modify_variant_container,text="Add",font=("Helvetica",10),**self.button_style,command=self.increase_variant)
         self.variant_remove_button = tk.Button(self.modify_variant_container,text="Remove",font=("Helvetica",10),**self.button_style,command=self.decrease_variant)
+        self.variant_files_button.append(tk.Button(self.variant_container,text="A",**self.button_style,command=self.open_folder_rename))
 
         # Load the widgets
         self.rename_title.pack(pady=(100,0))
-        self.rename_disclaimer.pack(pady=5)
+        #self.rename_disclaimer.pack(pady=5)
         self.rename_container.pack(pady=(50,5))
-        self.rename_folder_button.grid(row=2,column=1,pady=5)
-        self.rename_path_label.grid(column=0,row=2,sticky="e")
+        #self.rename_folder_button.grid(row=2,column=1,pady=5)
+        #self.variant_path_labels.grid(column=0,row=2,sticky="e")
         self.toggle_date_button.grid(row=1,column=1,pady=5)
         self.toggle_reverse_button.grid(row=0,column=1,pady=5)
         self.date_sort_label.grid(row=1,column=0,sticky="e")
         self.reverse_label.grid(row=0,column=0,sticky="e")
-        self.rename_button.grid(row=3,column=1,pady=(50))
+        self.rename_button.grid(row=3,column=1,pady=(0,50))
         self.back_button.pack(side=tk.BOTTOM,pady=(5,10))
         self.rename_container.grid_columnconfigure(0,weight=1,minsize=437)
         self.rename_container.grid_columnconfigure(1,weight=1,minsize=150)
         self.rename_container.grid_columnconfigure(2,weight=1,minsize=437)
         self.variant_container.grid(row=5,column=1)
         self.variant_labels_container.grid(row=5,column=0,sticky="ne")
+        self.variant_paths_container.grid(row=5,column=2,sticky="nw")
         self.variant_entries[0].grid(row=0,column=0,pady=2)
+        self.variant_files_button[0].grid(row=0,column=1,padx=2)
         self.variant_labels[0].grid(row=0,column=0,sticky="ne")
+        self.variant_path_labels[0].grid(row=0,column=0,sticky="nw")
         self.modify_variant_container.grid(row=1,column=0)
         self.variant_add_button.grid(row=0,column=0,pady=2)
 
         # Bind the sounds for the buttons
-        self.rename_folder_button.bind("<ButtonPress-1>",self.play_button_press)
+        #self.rename_folder_button.bind("<ButtonPress-1>",self.play_button_press)
         self.toggle_date_button.bind("<ButtonPress-1>",self.play_button_press)
         self.toggle_reverse_button.bind("<ButtonPress-1>",self.play_button_press)
         self.rename_button.bind("<ButtonPress-1>",self.play_button_press)
         self.variant_add_button.bind("<ButtonPress-1>",self.play_button_press)
         self.variant_remove_button.bind("<ButtonPress-1>",self.play_button_press)
         self.back_button.bind("<ButtonPress-1>",self.play_button_press)
-        self.rename_folder_button.bind("<ButtonRelease-1>",self.play_button_release)
+        #self.rename_folder_button.bind("<ButtonRelease-1>",self.play_button_release)
         self.toggle_date_button.bind("<ButtonRelease-1>",self.play_button_release)
         self.toggle_reverse_button.bind("<ButtonRelease-1>",self.play_button_release)
         self.rename_button.bind("<ButtonRelease-1>",self.play_button_release)
         self.back_button.bind("<ButtonRelease-1>",self.play_button_release)
         self.variant_add_button.bind("<ButtonRelease-1>",self.play_button_release)
         self.variant_remove_button.bind("<ButtonRelease-1>",self.play_button_release)
+        
 
     # Get the folder of the files to be renamed
-    def open_folder_rename(self):
-        self.rename_filepath = filedialog.askdirectory()
-        self.rename_path_label.config(text=f"Folder: {self.rename_filepath}")
-        self.rename_button.config(state=tk.NORMAL)
-        self.successful_rename_warning.pack_forget()
+    def open_folder_rename(self,index=0):
+        self.rename_filepath[index] = filedialog.askopenfilenames(title="Select Images",filetypes=(("Image files", "*.png *.jpeg *.jpg *.gif *.bmp *.tiff"),("All files","*.*")))
+        if self.rename_filepath:
+            self.variant_path_labels[index].config(text=f"{len(self.rename_filepath)} image(s) selected")
+            self.successful_rename_warning.pack_forget()
+            for path in self.rename_filepath:
+                if not path:
+                    self.rename_button.config(state=tk.DISABLED)
+                    return
+            self.rename_button.config(state=tk.NORMAL)
+
 
     # Increase the number of variants by 1
     def increase_variant(self):
         self.variant_count += 1
+        self.rename_filepath.append(False)
+        self.rename_button.config(state=tk.DISABLED)
 
         self.variant_entries.append(tk.Entry(self.variant_container,font=("Helvetica",11),bg=self.button_style["background"],foreground="white",bd=0,insertbackground="white"))
         self.variant_labels.append(tk.Label(self.variant_labels_container,font=("Helvetica",11),bg=self.background_color,foreground="white",text=f"Variant {self.variant_count}"))
+        self.variant_files_button.append(tk.Button(self.variant_container,text="A",**self.button_style,command=self.open_folder_rename))
 
         self.variant_entries[-1].grid(row=self.variant_count-1,column=0,pady=2)
         self.variant_labels[-1].grid(row=self.variant_count-1,column=0)
+        self.variant_files_button[-1].grid(row=self.variant_count-1,column=1)
 
         self.modify_variant_container.grid_configure(row=self.variant_count)
 
@@ -229,16 +250,25 @@ class Application():
     # Decrease the number of variants by 1
     def decrease_variant(self):
         self.variant_count -=1
+        del self.rename_filepath[-1]
 
         self.variant_entries[-1].grid_forget()
         del self.variant_entries[-1]
         self.variant_labels[-1].grid_forget()
         del self.variant_labels[-1]
+        self.variant_files_button[-1].grid_forget()
+        del self.variant_files_button[-1]
 
         self.modify_variant_container.grid_configure(row=self.variant_count)
 
         if self.variant_count == 1:
             self.variant_remove_button.grid_forget()
+
+        for path in self.rename_filepath:
+            if not path:
+                return
+        self.rename_button.config(state=tk.NORMAL)
+
 
     # Check if folder, variant count and names are OK and run the rename function
     def renaming(self):
@@ -297,7 +327,7 @@ class Application():
         # Clear renaming screen
         self.error_rename_warning.pack_forget()
         self.rename_title.pack_forget()
-        self.rename_disclaimer.pack_forget()
+        #self.rename_disclaimer.pack_forget()
         self.rename_container.pack_forget()
         self.back_button.pack_forget()
         self.rename_warning.pack_forget()
