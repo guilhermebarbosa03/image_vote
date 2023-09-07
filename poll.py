@@ -863,6 +863,7 @@ class Application:
     def decrease_variant(self):
         # Remove widgets
         self.variant_count -= 1
+        
         del self.rename_filepath[-1]
         self.variant_path_labels[-1].grid_forget()
         del self.variant_path_labels[-1]
@@ -872,8 +873,10 @@ class Application:
         del self.variant_labels[-1]
         self.variant_files_button[-1].grid_forget()
         del self.variant_files_button[-1]
-        self.variant_files_button[-1].grid_forget()
+        self.variant_add_file_button[-1].grid_forget()
         del self.variant_add_file_button[-1]
+        self.variant_remove_file_button[self.variant_count].grid_forget()
+        del self.variant_remove_file_button[self.variant_count]
 
         self.modify_variant_container.grid_configure(row=self.variant_count)
         if self.variant_count == 1:
