@@ -16,11 +16,13 @@ class Application:
         # Main window settings
         self.root = tk.Tk()
         self.root.geometry("1280x720")
-        self.root.config(bg="#282D2F")
         self.root.minsize(250, 200)
         self.root.state("zoomed")
+        if os.path.exists("./icon.ico"):
+            self.root.iconbitmap(default="./icon.ico")
         self.filepath = ""
         self.background_color = "#282D2F"
+        self.root.config(bg=self.background_color)
         self.button_style = {
             "background": "#515A60",
             "activebackground": "#E0E0E0",
