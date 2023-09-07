@@ -30,20 +30,33 @@ class Application:
         }
         self.root.update()
 
+        self.audio_button_press_exists = False
+        self.audio_button_release_exists = False
+        self.audio_image_grab_exists = False
+        self.audio_image_release_exists = False
+
         self.start_screen()  # Load starting screen
         self.audio_setup()
 
     # Set up sound effects
     def audio_setup(self):
         pygame.mixer.init()
-        self.audio_button_press = pygame.mixer.Sound("./audio/big_tap.mp3")
-        self.audio_button_release = pygame.mixer.Sound("./audio/big_tap_end.mp3")
-        self.audio_image_grab = pygame.mixer.Sound("./audio/short_tap.mp3")
-        self.audio_image_release = pygame.mixer.Sound("./audio/short_tap_low.mp3")
-        pygame.mixer.Sound.set_volume(self.audio_button_press, 0.5)
-        pygame.mixer.Sound.set_volume(self.audio_button_release, 0.7)
-        pygame.mixer.Sound.set_volume(self.audio_image_grab, 0.5)
-        pygame.mixer.Sound.set_volume(self.audio_image_release, 1.15)
+        if os.path.exists("./audio/big_tap.mp3"):
+            self.audio_button_press_exists = True
+            self.audio_button_press = pygame.mixer.Sound("./audio/big_tap.mp3")
+            pygame.mixer.Sound.set_volume(self.audio_button_press, 0.5)
+        if os.path.exists("./audio/big_tap_end.mp3"):
+            self.audio_button_release_exists = True
+            self.audio_button_release = pygame.mixer.Sound("./audio/big_tap_end.mp3")
+            pygame.mixer.Sound.set_volume(self.audio_button_release, 0.7)
+        if os.path.exists("./audio/short_tap.mp3"):
+            self.audio_image_grab_exists = True
+            self.audio_image_grab = pygame.mixer.Sound("./audio/short_tap.mp3")
+            pygame.mixer.Sound.set_volume(self.audio_image_grab, 0.5)
+        if os.path.exists("./audio/short_tap_low.mp3"):
+            self.audio_image_release_exists = True
+            self.audio_image_release = pygame.mixer.Sound("./audio/short_tap_low.mp3")
+            pygame.mixer.Sound.set_volume(self.audio_image_release, 1.15)
 
     # Create and load widgets for the start screen
     def start_screen(self):
@@ -283,11 +296,21 @@ class Application:
 
     # Play audio when pressing button
     def play_button_press(self, event=None):
-        self.audio_button_press.play()
+        if self.audio_button_press_exists:
+            self.audio_button_press.play()
 
     # Play audio when releasing button
     def play_button_release(self, event=None):
-        self.audio_button_release.play()
+        if self.audio_button_release_exists:
+            self.audio_button_release.play()
+
+    def play_image_grab(self):
+        if self.audio_image_grab_exists:
+            self.audio_image_grab.play()
+
+    def play_image_release(self):
+        if self.audio_image_release_exists:
+            self.audio_image_release.play()
 
     # Hide current page and show the next one
     def show_page(self, page_number):
@@ -1275,7 +1298,7 @@ class ImageClass:
             math.dist(self.closest_center, self.canvas.coords(self.image_id))
             < self.page_class.image_resolution[1]
         ):
-            self.app_object.audio_image_release.play()
+            self.app_object.play_image_release()
             put_in = self.page_class.slot_centers_list.index(
                 (self.closest_center[0], self.closest_center[1])
             )
@@ -1327,7 +1350,7 @@ class ImageClass:
 
         # Play the image_grab audio if image wasn't locked into a slot
         else:
-            self.app_object.audio_image_grab.play()
+            self.app_object.play_image_grab()
 
         self.app_object.button_check()
 
@@ -1340,7 +1363,7 @@ class ImageClass:
         # Disable zooming in when image is grabbed
         self.canvas.tag_unbind(self.image_id, "<Button-3>")
         self.canvas.tag_unbind(self.image_id, "<ButtonRelease-3>")
-        self.app_object.audio_image_grab.play()
+        self.app_object.play_image_grab()
 
         # If the image were in a slot, make it empty
         try:

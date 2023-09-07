@@ -1,3 +1,6 @@
 .vscode
 __pycache__
 renamed_files
+poll.spec
+dist
+build
